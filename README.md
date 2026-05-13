@@ -440,7 +440,7 @@ sqlite3 workshop.db ".tables"
 
 > **Screenshot 3:** Take a screenshot showing the `.tables` output.
 >
-> `[insert screenshot]`
+> ![image alt](https://github.com/amendabbech/DBMS_04/blob/faacf28d58c975a907fa4c1c6a68d493d006fc77/3.png)
 
 ### Task 4c – Insert Sample Data
 
@@ -516,7 +516,8 @@ git commit -m "feat: DDL and sample data for normalized workshop schema"
 Justify both choices in terms of the domain — what does it mean for the
 business if an order is deleted versus if a customer is deleted?
 
-> *Your answer:*
+> CASCADE is used for work_item.order_no because deleting an order should also delete all related work items.
+RESTRICT is used for vehicle.cust_no because a customer cannot be deleted while vehicles still exist.
 
 **Question 4.2:** Test referential integrity by running:
 
@@ -528,7 +529,8 @@ INSERT INTO work_item VALUES (9999, 1, 3, 'Ghost item', 1.0);
 What error do you get? What does this tell you about the difference between
 a constraint declared in DDL and one that is actually enforced at runtime?
 
-> *Your answer:*
+> Error: FOREIGN KEY constraint failed
+This shows that constraints are only enforced at runtime when PRAGMA foreign_keys = ON.
 
 **Question 4.3:** Test the CHECK constraint:
 
@@ -538,7 +540,8 @@ INSERT INTO work_item VALUES (1001, 3, 3, 'Invalid', -0.5);
 
 What happens? What would happen if the CHECK constraint were missing?
 
-> *Your answer:*
+> Error: CHECK constraint failed
+Without the CHECK constraint, negative hours would be accepted, leading to invalid data.
 
 ---
 
@@ -556,7 +559,13 @@ Write the relational algebra expression first (in words or formal notation),
 then the SQL query.
 
 ```sql
--- Query 5a: insert here
+SELECT o.order_no, o.date, v.plate, w.description, w.hours
+FROM customer c
+JOIN "order" o ON c.cust_no = o.cust_no
+JOIN vehicle v ON o.plate = v.plate
+JOIN work_item w ON o.order_no = w.order_no
+WHERE c.cust_name = 'Berger, Franz'
+ORDER BY o.date, w.item_no;
 ```
 
 <details>
@@ -571,7 +580,7 @@ order 1003 (BMW 320i, 2026-03-12).
 `work_item`). In what order would the query optimizer ideally perform the joins —
 and why does the join order not affect the *result*, but does affect *performance*?
 
-> *Your answer:*
+> The optimizer usually joins starting from customer, then filters early and joins smaller intermediate results first to reduce row size. Join order does not affect the result because joins are associative, but it affects performance due to intermediate result sizes.
 
 ---
 
@@ -583,8 +592,15 @@ place), and `orders` (the number of distinct orders in which the mechanic had at
 least one work item). Sort descending by `total_hours`.
 
 ```sql
--- Query 5b: insert here
-```
+SELECT m.mech_name,
+       ROUND(SUM(w.hours), 1) AS total_hours,
+       COUNT(DISTINCT w.order_no) AS orders
+FROM mechanic m
+JOIN work_item w ON m.mech_id = w.mech_id
+JOIN "order" o ON w.order_no = o.order_no
+WHERE o.date BETWEEN '2026-03-01' AND '2026-03-31'
+GROUP BY m.mech_id
+ORDER BY total_hours DESC;```
 
 <details>
 <summary>Expected result</summary>
@@ -600,7 +616,7 @@ least one work item). Sort descending by `total_hours`.
 What would `COUNT(*)` count instead, and why would the result differ in this
 case?
 
-> *Your answer:*
+> COUNT(*) would count all work_item rows, including multiple items per order, so it would count items instead of distinct orders.
 
 ---
 
@@ -614,10 +630,21 @@ Use a set-difference approach with `EXCEPT` and also write an alternative using
 
 ```sql
 -- Variant 1: EXCEPT
--- Query 5c-1: insert here
+-- SELECT plate, model
+FROM vehicle
+EXCEPT
+SELECT v.plate, v.model
+FROM vehicle v
+JOIN "order" o ON v.plate = o.plate;
 
 -- Variant 2: NOT EXISTS
--- Query 5c-2: insert here
+SELECT v.plate, v.model
+FROM vehicle v
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM "order" o
+    WHERE o.plate = v.plate
+);
 ```
 
 <details>
@@ -638,7 +665,7 @@ After that, the query should return `BOT-ZZ 1 | Yaris`.
 always produce the same result. Are there situations where one approach should
 be preferred in practice? Consider readability and extensibility.
 
-> *Your answer:*
+> NOT EXISTS is often preferred because it is more readable and works better with correlated subqueries and NULL handling, while EXCEPT is more limited in extensibility.
 
 ---
 
