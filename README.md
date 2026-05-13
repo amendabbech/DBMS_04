@@ -339,7 +339,7 @@ scp <username>@<server>:/path/to/DBMS_04/schema.svg ~/Downloads/schema.svg
 > **Screenshot 2:** Take a screenshot showing the rendered diagram with all
 > five entities and their relationships.
 >
-> `[insert screenshot]`
+> ![image alt](https://github.com/amendabbech/DBMS_04/blob/a8d44ff37ce406d8c4590fb8211e8b5d1954a4ab/2.png)
 
 ### Task 3c – Commit
 
