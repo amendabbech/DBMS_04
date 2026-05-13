@@ -602,15 +602,7 @@ WHERE o.date BETWEEN '2026-03-01' AND '2026-03-31'
 GROUP BY m.mech_id
 ORDER BY total_hours DESC;```
 
-<details>
-<summary>Expected result</summary>
 
-| mech_name  | total_hours | orders |
-|------------|-------------|--------|
-| Huber, Tom | 2.8         | 2      |
-| Schulz, P. | 2.3         | 2      |
-
-</details>
 
 **Question 5b:** Using `COUNT(DISTINCT order_no)` counts orders, not items.
 What would `COUNT(*)` count instead, and why would the result differ in this
