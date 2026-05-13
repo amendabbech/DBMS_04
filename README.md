@@ -98,7 +98,18 @@ Read the table carefully and describe one concrete example of each:
 3. **Delete anomaly:** What information is permanently lost if order 1002 is
    deleted entirely?
 
-> *Your answers:*
+> Update anomaly:
+If mechanic Huber (MechId M03) raises his hourly rate to 70.00, all rows with MechId M03 must be updated:
+Order 1001 (2 rows)
+Order 1003 (1 row)
+
+Insert anomaly:
+No. A new mechanic cannot be added without an order.
+Missing information: OrderNo, ItemNo, customer, vehicle, and work data.
+
+Delete anomaly:
+If order 1002 is deleted, all information about that order is lost, including:
+customer Novak, Jana, vehicle Ford Focus, mechanic Schulz, and the performed work (front brake pads).
 
 ### Task 1b – Write Down Functional Dependencies
 
@@ -111,7 +122,11 @@ Hints:
 - What does a single mechanic ID determine?
 - What only follows from the combination `(OrderNo, ItemNo)`?
 
-> *Your FD list:*
+> CustNo → CustName, CustCity
+Plate → Make, Model, Year, CustNo
+MechId → MechName, HourlyRate
+OrderNo → Date, CustNo
+(OrderNo, ItemNo) → Plate, MechId, Description, Hours
 
 ### Questions for Task 1
 
@@ -119,17 +134,20 @@ Hints:
 respect to the primary key `(OrderNo, ItemNo)`? Justify your answer using the
 definition from Lecture 04.
 
-> *Your answer:*
+> CustNo → CustCity is a partial dependency, because CustNo is only part of the composite key (OrderNo, ItemNo) and determines CustCity.
 
 **Question 1.2:** Identify a transitive dependency in the flat table and explain
 why it violates 3NF.
 
-> *Your answer:*
+> A transitive dependency is:
+OrderNo → CustNo and CustNo → CustCity, therefore OrderNo → CustCity.
+This violates 3NF because a non-key attribute (CustCity) depends on another non-key attribute (CustNo) instead of directly on the key.
 
 **Question 1.3:** Compute the attribute closure $\{\mathrm{OrderNo}\}^+$ using
 your FD list. Is `OrderNo` alone a superkey of the flat table?
 
-> *Your answer:*
+> OrderNo⁺ = {OrderNo, Date, CustNo, CustName, CustCity}
+OrderNo is not a superkey of the table because it does not determine all attributes
 
 ---
 
@@ -154,7 +172,7 @@ then fill in the table below.
 Check: In every relation, does each non-key attribute depend on the **complete**
 primary key?
 
-> *Your check:*
+> Yes. In every relation, all non-key attributes depend on the whole primary key.
 
 ### Task 2b – Decompose into 3NF
 
@@ -169,7 +187,7 @@ Examine `order` and `vehicle` for transitive dependencies.
 State your conclusion: are all five relations from Task 2a already in 3NF?
 If not, perform the missing decomposition.
 
-> *Your analysis and any further decomposition:*
+> order: order_no → plate, cust_no, date. No transitive dependencies anymore (CustName is now in customer). Already in 3NF. vehicle: plate → make, model, year, cust_no. cust_no is a foreign key, but plate directly determines cust_no. This is not a transitive dependency because cust_no depends directly on the primary key. Already in 3NF. All five relations from 2a are already in 3NF.
 
 ### Task 2c – Verify Losslessness
 
@@ -181,7 +199,10 @@ $$R_1 \cap R_2 \rightarrow R_1 \setminus R_2 \quad \text{or} \quad R_1 \cap R_2 
 Name the shared attributes, state the FD you rely on, and conclude whether the
 decomposition is lossless.
 
-> *Your verification:*
+> Shared attribute: plate
+FD: plate → make, model, year, cust_no
+Since plate is a key of vehicle, the decomposition satisfies the Heath criterion.
+Conclusion: The decomposition is lossless.
 
 ### Questions for Task 2
 
@@ -190,20 +211,27 @@ though the customer is also reachable via the vehicle's licence plate?
 Describe a realistic scenario where the direct link `order → customer` is
 necessary.
 
-> *Your answer:*
+> cust_no must remain in order because an order directly belongs to a customer independently of the vehicle.
+A realistic scenario: a customer changes their car, but historical orders must still reference the original customer who placed the order.
 
 **Question 2.2:** Is the schema after the 3NF decomposition also in BCNF?
 Justify your answer using the definition: for every non-trivial FD $X \rightarrow Y$,
 $X$ must be a superkey.
 
-> *Your answer:*
+> No, the schema is not fully in BCNF.
+Reason:
+In vehicle, the dependency plate → cust_no exists, but cust_no is not a superkey of vehicle.
+Therefore BCNF is violated.
 
 **Question 2.3:** The hourly rate of a mechanic is stored in `mechanic`. If a
 mechanic changes their rate during the year, what problem arises for already
 completed orders? How could the schema be extended to correctly record
 historical hourly rates?
 
-> *Your answer:*
+> Problem:
+If a mechanic changes their hourly rate, all past orders would incorrectly appear with the new rate, losing historical accuracy.
+Solution:
+Introduce a separate table, e.g. mechanic_rate_history(mech_id, valid_from, valid_to, hourly_rate), so each order can reference the correct rate at the time of work.
 
 ---
 
