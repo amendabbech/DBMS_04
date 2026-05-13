@@ -686,14 +686,16 @@ The original flat table had 5 rows and 15 columns. The normalized schema has
 5 tables. At which data volume does normalization pay off most — at 5 rows or
 at 50,000? Justify with concrete reference to the anomalies from Task 1a.
 
-> *Your answer:*
+> Normalization pays off much more at 50,000 rows than at 5 rows.
+With large data volumes, redundancy causes many more inconsistencies (update, insert, delete anomalies from Task 1a), so normalization significantly reduces storage errors and maintenance effort.
 
 **Question B – 3NF vs. BCNF:**  
 Lecture 04 explains that BCNF is not always dependency-preserving. Is this
 relevant for the workshop schema? Would a BCNF decomposition have looked
 different from the 3NF decomposition here?
 
-> *Your answer:*
+> This is relevant in general, but not critical for this schema.
+A BCNF decomposition would be very similar to the 3NF decomposition here because all functional dependencies already have determinants that are keys or foreign keys. Therefore, no meaningful different schema would result.
 
 **Question C – Redundant foreign key in `order`:**  
 `order` contains both `plate` (FK → `vehicle`) and `cust_no` (FK → `customer`).
@@ -701,7 +703,8 @@ Since `vehicle` itself contains `cust_no`, one might argue that `cust_no`
 in `order` is redundant and violates 3NF. Is that correct? When would such
 a deliberate denormalization be justified?
 
-> *Your answer:*
+> It is not strictly incorrect. cust_no in order is redundant from a pure dependency perspective, because it can be derived via plate → cust_no.
+However, it is often intentionally kept for performance and query simplicity (avoiding joins). This is a controlled denormalization.
 
 **Question D – NULL and order status:**  
 An order that has just been created may have no work items yet. What does the
@@ -709,12 +712,21 @@ current schema say about this case? Would the schema need to be extended to
 correctly represent an order's status (open / completed)? Sketch the necessary
 change.
 
-> *Your answer:*
+> Currently, an order with no work items is allowed because work_item is a separate table. This means an order can exist in an “empty” state implicitly.
+
+To model status explicitly, the schema could be extended with:
+
+order_status(order_no, status)
+or adding a column in order:
+
+status TEXT CHECK(status IN ('open','completed'))
+
+This would allow clear tracking of order lifecycle.
 
 > **Screenshot 4:** Take a screenshot showing the output of Query 5b directly
 > in `sqlite3` (with `.headers on` and `.mode column` activated).
 >
-> `[insert screenshot]`
+> ![image alt](https://github.com/amendabbech/DBMS_04/blob/2294fe2465bb26af5836ede588acf2a1a0591075/4.png)
 
 ---
 
